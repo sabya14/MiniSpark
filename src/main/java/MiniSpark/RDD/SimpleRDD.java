@@ -8,9 +8,9 @@ import java.util.Map;
 
 
 
-public abstract class SimpleRDD {
+public abstract class SimpleRDD<SomePartitionType extends Partition> {
     protected MiniSparkContext msc;
-    private List<Partition> partitions;
+    private List<SomePartitionType> partitions;
     public Map<String, String> compute;
 
     public SimpleRDD(MiniSparkContext msc) {
@@ -18,9 +18,9 @@ public abstract class SimpleRDD {
     }
 
     // Get the partitions for this RDD.
-    public abstract List<Partition> getPartitions();
+    public abstract List<SomePartitionType> getPartitions();
 
     // Run a compute over a partition
-    public abstract Map<String, ?> compute (Partition p);
+    public abstract Map<String, ?> compute (SomePartitionType p);
 
 }

@@ -2,18 +2,14 @@ package MiniSpark.RDD;
 
 import MiniSpark.MiniSparkContext;
 import MiniSpark.Partitions.FilePartition;
-import MiniSpark.Partitions.Partition;
-import javafx.util.Pair;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
-public class FileSimpleRDD extends SimpleRDD {
-    RandomAccessFile randomAccessFile;
+public class FileSimpleRDD extends SimpleRDD<FilePartition> {
+    private RandomAccessFile randomAccessFile;
 
     public FileSimpleRDD(MiniSparkContext msc, RandomAccessFile randomAccessFile) {
         super(msc);
@@ -21,34 +17,34 @@ public class FileSimpleRDD extends SimpleRDD {
     }
 
     @Override
-    public List<Partition> getPartitions() {
-        List<Partition> filePartitions = new ArrayList<>();
+    public List<FilePartition> getPartitions() {
+        List<FilePartition> filePartitions = new ArrayList<>();
         try {
             long fileLength = randomAccessFile.length();
             long noOfPartitions = msc.getParallelism();
             long approxPartitionLength = fileLength / noOfPartitions;
 
-            ArrayList<Pair<Long, Long>> readBlocks = new ArrayList<>();
+            Map<Long, Long> readBlocks = new LinkedHashMap<>();
 
-            long startPosition = 1;
+            long startPosition = 0;
             long seekToPosition = approxPartitionLength - 1;
             randomAccessFile.seek(seekToPosition);
-
-            // Iter till next newline
-
             while (readBlocks.size() < msc.getParallelism() - 1) {
+                // Iter till next newline
                 long goAhead = 0;
                 while (randomAccessFile.readByte() != 10) {
                     goAhead++;
                 }
-                readBlocks.add(new Pair<>(startPosition, seekToPosition + goAhead));
-                seekToPosition = startPosition = seekToPosition + goAhead + 2;
+                long readTill = seekToPosition + goAhead + 1;
+                readBlocks.put(startPosition, readTill);
+                seekToPosition = startPosition = readTill;
                 randomAccessFile.seek(seekToPosition);
             }
-            readBlocks.forEach(position ->
-                    filePartitions.add(new FilePartition(filePartitions.size(), position))
+            // For adding the last partition
+            readBlocks.forEach((position, endPosition)->
+                    filePartitions.add(new FilePartition(filePartitions.size(), position, endPosition))
             );
-            filePartitions.add(new FilePartition(filePartitions.size(), new Pair<>(seekToPosition, randomAccessFile.length())));
+            filePartitions.add(new FilePartition(filePartitions.size(), seekToPosition, randomAccessFile.length()));
             return filePartitions;
 
         } catch (IOException e) {
@@ -60,9 +56,23 @@ public class FileSimpleRDD extends SimpleRDD {
     }
 
     @Override
-    public Map<String, ?> compute(Partition p) {
-        return null;
-    }
+    // We can return iterators here, but for now we will return in memory map.
+    public Map<String, String> compute(FilePartition filePartition)  {
+        Map<String, String> computedValue = new HashMap<>();
+        try {
+            long startPosition  =  filePartition.getStartIndex();
+            long readTillPosition  = filePartition.getStopIndex();
+            randomAccessFile.seek(startPosition);
+            while(randomAccessFile.getFilePointer() < readTillPosition) {
+                computedValue.put(String.valueOf(randomAccessFile.getFilePointer()), randomAccessFile.readLine());
+            }
+            return computedValue;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    };
 
 
 }

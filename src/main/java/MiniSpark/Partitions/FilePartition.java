@@ -1,6 +1,5 @@
 package MiniSpark.Partitions;
 
-import javafx.util.Pair;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -9,10 +8,11 @@ import lombok.Getter;
 @Getter
 public  class FilePartition extends Partition {
     int partitionIndex;
-    Pair posAndOffsets;
+    long startIndex;
+    long stopIndex;
 
     @Override
     public String toString() {
-        return partitionIndex + posAndOffsets.toString();
+        return String.valueOf(partitionIndex) + String.valueOf(startIndex) + String.valueOf(stopIndex);
     }
 }
