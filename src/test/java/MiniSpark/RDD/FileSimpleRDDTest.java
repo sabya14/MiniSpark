@@ -71,4 +71,25 @@ class FileSimpleRDDTest {
         assertEquals(rdd.compute(new FilePartition(3, 18,27)),  Collections.singletonMap("18", "3rd line"));
         assertEquals(rdd.compute(new FilePartition(2, 9,18)),  Collections.singletonMap("9", "2nd line"));
     }
+
+
+    @Test
+    void shouldReturnCorrectCount() throws IOException {
+        List<String> lines = Arrays.asList("1st lines", "2nd line", "3rd line", "4th line");
+
+        Files.write(Paths.get("testfile.txt"),
+                lines,
+                StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE);
+
+        MiniSparkContext miniSparkContext = mock(MiniSparkContext.class);
+        when(miniSparkContext.getParallelism()).thenReturn(4);
+        RandomAccessFile randomAccessFile = new RandomAccessFile("testfile.txt", "r");
+        FileSimpleRDD rdd = new FileSimpleRDD(miniSparkContext, randomAccessFile);
+        SimpleRDD<Integer, FilePartition> lineLengthRDD = rdd.mapRDD(x -> x.length());
+        List<FilePartition> partitions = lineLengthRDD.getPartitions();
+        assertEquals(lineLengthRDD.compute(partitions.get(0)), Collections.singletonMap("0", 9));
+
+    }
 }

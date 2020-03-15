@@ -8,7 +8,7 @@ import java.io.RandomAccessFile;
 import java.util.*;
 
 
-public class FileSimpleRDD extends SimpleRDD<FilePartition> {
+public class FileSimpleRDD extends SimpleRDD<String, FilePartition> {
     private RandomAccessFile randomAccessFile;
 
     public FileSimpleRDD(MiniSparkContext msc, RandomAccessFile randomAccessFile) {
