@@ -5,6 +5,7 @@ import MiniSpark.Partitions.Partition;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 
@@ -31,4 +32,13 @@ public class MapSimpleRDD<T, U, SomePartitionType extends Partition> extends Sim
         parentData.forEach((key,value) -> mappedData.put(key, mapper.apply(value)));
         return mappedData;
     }
+
+    // Given keys with same value, it will combine it into a single value
+    public MapSimpleRDD<T, U, SomePartitionType> reduceByKey(BiFunction<T, T, T> aggregator) {
+        // In each partion reduce by key, return a RDD from it.
+        // RDD with same keys s
+        // This is an action. It will call the compute functions. It should do it in parallel.
+        // Then based on partitioner it will send data to different RDD where the data will be reduced.
+    }
+
 };
